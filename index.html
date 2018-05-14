@@ -21,16 +21,29 @@
             
         </style>
     </head>
-    <img src = "res/2.jpg" style="float:middle;width:350px;height:350px;">
     <body>
+       <a href="javascript: submitImage()">SUBMIT</a>
         <p class="lit1">
          Is oliver gay or noot?
         </p> 
+           <p>Savagely choose</p>
+           <button onclick="myFunction()">Click me</button>
+           
             <table>
 		<tr>
-			<td><img src = "res/2.jpg" style="width:350px;height:350px;" /></td>
+			<td>
+			    <figure>
+			        <img src = "" onclick= "rateImage(0)" style="width:350px;height:350px;">              
+                    <figcaption></figcaption>
+                </figure>
+            </td>
 			<td>OR</td>
-			<td><img src = "res/1.jpg" style="width:350px;height:350px;" /></td>
+			<td>
+			    <figure>
+			        <img src = "res/1.jpg" onclick= "rateImage(1)" style="width:350px;height:350px;">              
+                    <figcaption></figcaption>
+                </figure>
+            </td>
 		</tr>
 	</table>
            <p class="lit2">
@@ -39,6 +52,134 @@
            <br>
            <br>
         <p><font color="green" size="200">DMD</font></p><br>i Know about you
-        
+        <br>
+        <br>
+        <p>MarC Give me the Succ made dis</p>
     </body>
+    
+<script src="https://www.gstatic.com/firebasejs/5.0.2/firebase.js"></script>
+<script>
+  // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyA6U2aJ91uccxfjl9wy7VGY9U1m2bpUTO0",
+    authDomain: "facenotsmash.firebaseapp.com",
+    databaseURL: "https://facenotsmash.firebaseio.com",
+    projectId: "facenotsmash",
+    storageBucket: "facenotsmash.appspot.com",
+    messagingSenderId: "881424304250"
+  };
+  firebase.initializeApp(config);
+</script>
+
+	<script>
+		var database = firebase.database();
+
+		database.ref("images").on("value", gotData, gotErr);
+
+		function submitImage() {
+			var url = prompt("Enter URL: ");
+			if(!url) {
+				alert("Failed!");
+				return;
+			}
+
+			database.ref("images").push({
+				url: url,
+				rating: 1000
+			});
+		};
+
+		var allImages;
+		var image1;
+		var image2;
+		var imageInitiated = false;
+
+		function expected(Ra, Rb) {
+			return 1 / (1 + Math.pow(10, ((Rb - Ra)/400)));
+		};
+
+		function win(rating, expected) {
+			return (rating + 24 * (1 - expected));
+		};
+		function loss(rating, expected) {
+			return (rating + 24 * (0 - expected));
+		};
+
+		function rateImage(index) {
+			var winner, loser;
+			if(index == 0) {
+				winner = image1;
+				loser = image2;
+			} else {
+				winner = image2;
+				loser = image1;
+			}
+
+			var WE = expected(loser.rating, winner.rating);
+			var LE = expected(winner.rating, loser.rating);
+			var NW = win(winner.rating, WE);
+			var NL = loss(loser.rating, LE);
+
+			database.ref("images/" + winner.id).set({
+				url: winner.url,
+				rating: NW
+			});
+			database.ref("images/" + loser.id).set({
+				url: loser.url,
+				rating: NL
+			});
+
+			location.reload();
+		};
+
+		function getRanFromArr(arr) {
+			var index = Math.floor(Math.random() * arr.length);
+			return arr[index];
+		};
+
+		function setImage(index, img) {
+			var imgs = document.querySelectorAll("img");
+			var ele = imgs[index];
+			ele.src = img.url;
+
+			var caps = document.querySelectorAll("figcaption");
+			var ele = caps[index];
+			ele.innerHTML = "Rating: " + Math.round(img.rating);
+		};
+
+		function initiateImages() {
+			var keys = Object.keys(allImages);
+			if(keys.length <= 1) {
+				console.log("Not enough images in the database.");
+				return;
+			}
+
+			var key1 = getRanFromArr(keys);
+			var key2 = getRanFromArr(keys);
+			while (key1 == key2) {
+				key1 = getRanFromArr(keys);
+				key2 = getRanFromArr(keys);
+			};
+
+			// We also need the id of the image
+			image1 = Object.assign(allImages[key1], { id: key1 });
+			image2 = Object.assign(allImages[key2], { id: key2 });
+
+			setImage(0, image1);
+			setImage(1, image2);
+			imageInitiated = true;
+		};
+
+		function gotData(data) {
+			allImages = data.val();
+			if(!imageInitiated) {
+				initiateImages();
+			}
+		};
+
+		function gotErr(err) {
+			console.log("Error!");
+			console.log(err);
+		};
+	</script>
 </html> 
